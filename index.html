@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تحدي الأبطال | مسابقات ثقافية فريق ضد فريق</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- خط الثمانية — نستخدم IBM Plex Sans Arabic بنفس الروح الهندسية لخط ثمانية -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: { extend: {
+    fontFamily: { thman: ['"IBM Plex Sans Arabic"','Thmanyah','Tajawal','sans-serif'] },
+    colors: { gold:'#FFC93C', neon:'#22d3ee', punk:'#f472b6', deep:'#150a2e', card:'#211243' }
+  }}
+}
+</script>
+<style>
+*{font-family:'IBM Plex Sans Arabic','Thmanyah',Tajawal,sans-serif!important}
+body{background:#150a2e;color:#fff;min-height:100vh;overflow-x:hidden}
+.blobs{position:fixed;inset:0;z-index:-1;overflow:hidden;background:#150a2e}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:drift 14s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(60px,-40px) scale(1.15)}}
+.glass{background:rgba(255,255,255,.06);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12)}
+.grad-text{background:linear-gradient(90deg,#FFC93C,#f472b6,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cat-card{transition:.22s;cursor:pointer;border:2px solid rgba(255,255,255,.1)}
+.cat-card:hover{transform:translateY(-5px) scale(1.02);border-color:#FFC93C}
+.cat-card.sel{border-color:#FFC93C!important;background:rgba(255,201,60,.14)!important;box-shadow:0 0 0 3px #ffc93c55,0 10px 30px #ffc93c22}
+.diff-card{transition:.22s;cursor:pointer;border:2px solid rgba(255,255,255,.12)}
+.diff-card.sel-easy{border-color:#22c55e!important;background:#22c55e22!important;box-shadow:0 0 0 3px #22c55e55}
+.diff-card.sel-mid{border-color:#f59e0b!important;background:#f59e0b22!important;box-shadow:0 0 0 3px #f59e0b55}
+.diff-card.sel-hard{border-color:#ef4444!important;background:#ef444422!important;box-shadow:0 0 0 3px #ef444455}
+.opt-btn{transition:.18s}
+.opt-btn:not(:disabled):hover{transform:scale(1.02);border-color:#FFC93C}
+.opt-correct{background:linear-gradient(135deg,#16a34a,#22c55e)!important;border-color:#22c55e!important;color:#fff!important;box-shadow:0 0 25px #22c55e88}
+.opt-wrong{background:linear-gradient(135deg,#dc2626,#ef4444)!important;border-color:#ef4444!important;color:#fff!important}
+.opt-hide{visibility:hidden}
+@keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .3s ease}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+.shake{animation:shakeX .45s ease}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+.bump{animation:bump .5s ease}
+@keyframes pulseT{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+.pulseT{animation:pulseT .5s ease infinite}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.floatY{animation:floatY 3s ease-in-out infinite}
+.turnA{box-shadow:0 0 0 3px #22d3ee,0 0 35px #22d3ee66}
+.turnB{box-shadow:0 0 0 3px #f472b6,0 0 35px #f472b655}
+.life-btn:disabled{opacity:.35;filter:grayscale(1)}
+#fx-layer{position:fixed;inset:0;z-index:90;display:grid;place-items:center;pointer-events:none}
+.fx-big{font-size:5rem;line-height:1;animation:pop .3s ease}
+.timer-danger{color:#ef4444!important}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:#150a2e}::-webkit-scrollbar-thumb{background:#ffffff33;border-radius:10px}
+</style>
+</head>
+<body class="font-thman">
+<div class="blobs">
+  <div class="blob" style="width:480px;height:480px;background:#7c3aed;top:-120px;right:-120px"></div>
+  <div class="blob" style="width:420px;height:420px;background:#ec4899;bottom:-100px;left:-100px;animation-delay:2s"></div>
+  <div class="blob" style="width:380px;height:380px;background:#06b6d4;top:40%;right:30%;opacity:.3;animation-delay:4s"></div>
+  <div class="blob" style="width:300px;height:300px;background:#f59e0b;top:10%;left:30%;opacity:.25;animation-delay:1s"></div>
+</div>
+<canvas id="confetti" class="fixed inset-0 z-[80] pointer-events-none"></canvas>
+<div id="fx-layer"></div>
+
+<header class="max-w-7xl mx-auto flex items-center justify-between p-4 md:p-6">
+  <div class="flex items-center gap-3">
+    <div class="w-12 h-12 rounded-2xl grid place-items-center text-2xl font-bold floatY" style="background:linear-gradient(135deg,#FFC93C,#f472b6,#22d3ee)">🏆</div>
+    <div><h1 class="font-bold text-xl md:text-2xl leading-none">تحدي الأبطال</h1><p class="text-xs text-white/60">الفريق يختار الفئة والصعوبة • حماس × حماس</p></div>
+  </div>
+  <div class="flex gap-2">
+    <button id="muteBtn" onclick="toggleMute()" class="px-3 py-2 rounded-xl glass text-sm font-bold">🔊</button>
+    <button onclick="showScreen('home')" class="px-4 py-2 rounded-xl glass text-sm font-bold">🏠 الرئيسية</button>
+    <button onclick="showScreen('setup')" class="px-4 py-2 rounded-xl text-sm font-bold text-black" style="background:linear-gradient(90deg,#FFC93C,#fb923c)">⚔️ تحدي جديد</button>
+  </div>
+</header>
+
+<!-- HOME -->
+<section id="screen-home" class="max-w-7xl mx-auto px-4 md:px-6 pb-16">
+  <div class="text-center py-8 md:py-10">
+    <div class="inline-block px-4 py-1 rounded-full glass text-sm font-bold mb-4">🔥 <span class="text-gold">240+ سؤال</span> • 12 فئة • 3 مستويات • 6 وسائل (مرة واحدة)</div>
+    <h2 class="text-4xl md:text-6xl font-bold leading-tight">فريقك يختار…<br><span class="grad-text font-bold">الفئة والصعوبة، والبقاء للأذكى!</span></h2>
+    <p class="text-white/70 mt-4 max-w-2xl mx-auto font-medium">قبل كل سؤال: الفريق صاحب الدور يختار الفئة (🌍🕌⚽…) ومستوى الصعوبة (سهل 10 / متوسط 20 / صعب 30). إجابة صح = احتفال 🎉 وكونفيتي، وخطأ = اهتزاز الشاشة 😱!</p>
+    <div class="flex flex-wrap justify-center gap-3 mt-6">
+      <button onclick="showScreen('setup')" class="px-8 py-4 rounded-2xl font-bold text-lg text-black shadow-xl" style="background:linear-gradient(90deg,#FFC93C,#fb923c,#f472b6)">⚔️ ابدأ التحدي الجماعي</button>
+      <button onclick="quickSolo()" class="px-8 py-4 rounded-2xl glass font-bold text-lg">🎯 تدريب فردي</button>
+    </div>
+  </div>
+  <h3 class="font-bold text-2xl mb-1">📚 الفئات — اضغط للتجربة</h3>
+  <p class="text-white/60 text-sm mb-5">في التحدي الجماعي الفريق هو من يختار الفئة قبل كل سؤال من الفئات المتاحة.</p>
+  <div id="cats-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+  <div class="mt-10 glass rounded-3xl p-6 md:p-8 grid md:grid-cols-4 gap-6">
+    <div><div class="text-3xl mb-2">🎯</div><h4 class="font-bold">اختيار الفئة والصعوبة</h4><p class="text-sm text-white/60">صاحب الدور يختار الفئة + سهل/متوسط/صعب قبل كشف السؤال.</p></div>
+    <div><div class="text-3xl mb-2">🃏</div><h4 class="font-bold">6 وسائل — مرة واحدة</h4><p class="text-sm text-white/60">50:50 • تلميح مقرّب • تخطي • تغيير السؤال • وقت إضافي • مضاعفة ×2. كل وسيلة تُستخدم مرة واحدة فقط لكل فريق.</p></div>
+    <div><div class="text-3xl mb-2">🎉</div><h4 class="font-bold">تفاعلات حية</h4><p class="text-sm text-white/60">كونفيتي وتصفيق عند الصح، اهتزاز وصوت حزين عند الخطأ، وسلسلة نار 🔥.</p></div>
+    <div><div class="text-3xl mb-2">⏱️</div><h4 class="font-bold">عد تنازلي مسموع</h4><p class="text-sm text-white/60">آخر 5 ثواني: صوت عدّ + نبض أحمر على المؤقت.</p></div>
+  </div>
+  <h3 class="font-bold text-2xl mt-10 mb-4">🏅 لوحة الشرف</h3>
+  <div id="hall" class="glass rounded-2xl p-4 text-sm text-white/70">لا توجد نتائج بعد — العب تحدياً لتسجيل اسم فريقك هنا!</div>
+</section>
+
+<!-- SETUP -->
+<section id="screen-setup" class="hidden max-w-4xl mx-auto px-4 pb-16">
+  <h2 class="text-3xl font-bold text-center mt-4">⚔️ إعداد التحدي</h2>
+  <p class="text-center text-white/60 mb-6">حدد الفئات <b class="text-gold">المتاحة للاختيار</b> داخل التحدي — والفريق سيختار منها قبل كل سؤال</p>
+  <div class="glass rounded-3xl p-6 space-y-6">
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="rounded-2xl p-4" style="background:#22d3ee18;border:2px solid #22d3ee">
+        <label class="font-bold text-cyan-300">🔵 اسم الفريق الأول</label>
+        <input id="teamA-name" value="الصقور" class="mt-2 w-full bg-black/30 border border-white/15 rounded-xl px-4 py-3 font-bold outline-none">
+      </div>
+      <div class="rounded-2xl p-4" style="background:#f472b618;border:2px solid #f472b6">
+        <label class="font-bold text-pink-300">🟣 اسم الفريق الثاني</label>
+        <input id="teamB-name" value="النمور" class="mt-2 w-full bg-black/30 border border-white/15 rounded-xl px-4 py-3 font-bold outline-none">
+      </div>
+    </div>
+    <div>
+      <label class="font-bold">🎯 عدد أسئلة التحدي (5 / 10 / 15)</label>
+      <div class="grid grid-cols-3 gap-2 mt-2" id="rounds-pick">
+        <button data-v="5" class="round-btn px-4 py-3 rounded-xl bg-white/10 font-bold border-2 border-transparent">5 أسئلة</button>
+        <button data-v="10" class="round-btn px-4 py-3 rounded-xl font-bold border-2 text-black" style="background:linear-gradient(90deg,#FFC93C,#fb923c);border-color:#FFC93C">10 أسئلة</button>
+        <button data-v="15" class="round-btn px-4 py-3 rounded-xl bg-white/10 font-bold border-2 border-transparent">15 سؤال</button>
+      </div>
+    </div>
+    <div>
+      <label class="font-bold">⏱️ مدة كل سؤال</label>
+      <div class="grid grid-cols-3 gap-2 mt-2" id="time-pick">
+        <button data-v="15" class="time-btn px-4 py-3 rounded-xl bg-white/10 font-bold border-2 border-transparent">15 ثانية</button>
+        <button data-v="30" class="time-btn px-4 py-3 rounded-xl font-bold border-2 text-black" style="background:linear-gradient(90deg,#FFC93C,#fb923c);border-color:#FFC93C">30 ثانية</button>
+        <button data-v="60" class="time-btn px-4 py-3 rounded-xl bg-white/10 font-bold border-2 border-transparent">60 ثانية</button>
+      </div>
+    </div>
+    <div>
+      <div class="flex items-center justify-between">
+        <label class="font-bold">📚 الفئات المتاحة للاختيار داخل التحدي</label>
+        <button onclick="toggleAllCats(true)" class="text-xs bg-white/10 px-3 py-1 rounded-lg">تحديد الكل</button>
+      </div>
+      <div id="setup-cats" class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3"></div>
+    </div>
+    <button onclick="startBattle()" class="w-full py-4 rounded-2xl font-bold text-xl text-black" style="background:linear-gradient(90deg,#FFC93C,#fb923c,#f472b6)">🔥 ابدأ المعركة الآن</button>
+  </div>
+</section>
+
+<!-- GAME -->
+<section id="screen-game" class="hidden max-w-4xl mx-auto px-4 pb-16">
+  <div class="grid grid-cols-2 gap-3 mt-4">
+    <div id="cardA" class="glass rounded-2xl p-4 text-center"><div class="font-bold text-cyan-200 truncate" id="scoreA-name">الصقور 🔵</div><div class="text-4xl font-bold" id="scoreA">0</div><div class="text-xs text-white/60">✅ <span id="correctA">0</span> • ❌ <span id="wrongA">0</span> • 🔥 <span id="streakA">0</span></div></div>
+    <div id="cardB" class="glass rounded-2xl p-4 text-center"><div class="font-bold text-pink-200 truncate" id="scoreB-name">النمور 🟣</div><div class="text-4xl font-bold" id="scoreB">0</div><div class="text-xs text-white/60">✅ <span id="correctB">0</span> • ❌ <span id="wrongB">0</span> • 🔥 <span id="streakB">0</span></div></div>
+  </div>
+  <div class="mt-3 glass rounded-2xl p-3">
+    <div class="flex items-center justify-between text-sm"><div id="turn-label" class="font-bold"></div><div class="text-white/60">الجولة <span id="round-now" class="font-bold text-gold">1</span> / <span id="round-total">20</span></div></div>
+    <div class="h-2 rounded-full bg-white/10 mt-2 overflow-hidden"><div id="prog" class="h-full rounded-full" style="width:0%;background:linear-gradient(90deg,#FFC93C,#f472b6,#22d3ee);transition:width .4s"></div></div>
+  </div>
+
+  <!-- مرحلة الاختيار -->
+  <div id="pick-phase" class="mt-4 glass rounded-3xl p-6 md:p-8 pop">
+    <h3 id="pick-title" class="text-xl md:text-2xl font-bold text-center"></h3>
+    <p class="text-center text-white/60 text-sm mt-1">1️⃣ اختر الفئة &nbsp;&nbsp; 2️⃣ اختر الصعوبة &nbsp;&nbsp; 3️⃣ اضغط اعرض السؤال</p>
+    <h4 class="font-bold mt-5 mb-2">📚 الفئة:</h4>
+    <div id="pick-cats" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
+    <h4 class="font-bold mt-5 mb-2">🎚️ الصعوبة:</h4>
+    <div class="grid grid-cols-3 gap-2">
+      <div id="diff-easy" onclick="selectDiff('سهل')" class="diff-card rounded-2xl p-4 text-center bg-white/5"><div class="text-2xl">🟢</div><div class="font-bold">سهل</div><div class="text-gold font-bold text-sm">10 نقاط</div></div>
+      <div id="diff-mid" onclick="selectDiff('متوسط')" class="diff-card rounded-2xl p-4 text-center bg-white/5"><div class="text-2xl">🟡</div><div class="font-bold">متوسط</div><div class="text-gold font-bold text-sm">20 نقطة</div></div>
+      <div id="diff-hard" onclick="selectDiff('صعب')" class="diff-card rounded-2xl p-4 text-center bg-white/5"><div class="text-2xl">🔴</div><div class="font-bold">صعب</div><div class="text-gold font-bold text-sm">30 نقطة</div></div>
+    </div>
+    <button id="btn-start-q" onclick="confirmPick()" disabled class="w-full mt-5 py-4 rounded-2xl font-bold text-xl text-black disabled:opacity-40" style="background:linear-gradient(90deg,#22d3ee,#a78bfa,#f472b6)">🎲 اعرض السؤال</button>
+  </div>
+
+  <!-- مرحلة السؤال -->
+  <div id="q-phase" class="hidden mt-4">
+    <div class="glass rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap">
+      <div class="text-sm">الفئة: <span id="q-cat" class="font-bold text-gold"></span> • <span id="q-diff" class="font-bold"></span></div>
+      <div class="flex items-center gap-2" id="timer-wrap">
+        <svg width="52" height="52" viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="none" stroke="#ffffff22" stroke-width="5"/><circle id="timer-arc" cx="23" cy="23" r="19" fill="none" stroke="#FFC93C" stroke-width="5" stroke-linecap="round" stroke-dasharray="119.4" stroke-dashoffset="0" transform="rotate(-90 23 23)" style="transition:stroke-dashoffset 1s linear"/><text id="timer-num" x="23" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="white">30</text></svg>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 md:grid-cols-6 gap-2 mt-3">
+      <button onclick="use5050()" id="lb5050" class="life-btn px-2 py-2 rounded-xl glass text-xs font-bold">🃏 50:50 <span id="c5050"></span></button>
+      <button onclick="useHint()" id="lbHint" class="life-btn px-2 py-2 rounded-xl glass text-xs font-bold">💡 تلميح <span id="cHint"></span></button>
+      <button onclick="useExtraTime()" id="lbTime" class="life-btn px-2 py-2 rounded-xl glass text-xs font-bold">⏳ +15ث <span id="cTime"></span></button>
+      <button onclick="useChange()" id="lbChange" class="life-btn px-2 py-2 rounded-xl glass text-xs font-bold">🔄 تغيير <span id="cChange"></span></button>
+      <button onclick="useSkip()" id="lbSkip" class="life-btn px-2 py-2 rounded-xl glass text-xs font-bold">⏭️ تخطي <span id="cSkip"></span></button>
+      <button onclick="useX2()" id="lbX2" class="life-btn px-2 py-2 rounded-xl glass text-xs font-bold">✖️ ×2 <span id="cX2"></span></button>
+    </div>
+    <div id="q-box" class="mt-3 glass rounded-3xl p-6 md:p-8 pop">
+      <h3 id="q-text" class="text-xl md:text-2xl font-bold leading-relaxed"></h3>
+      <div id="q-opts" class="grid gap-3 mt-6"></div>
+      <div id="q-feedback" class="mt-4 font-bold text-center min-h-[28px]"></div>
+      <button id="btn-next" onclick="goNext()" class="hidden w-full mt-2 py-3 rounded-xl font-bold text-black" style="background:linear-gradient(90deg,#FFC93C,#fb923c)">التالي ⬅</button>
+    </div>
+    <button onclick="quitGame()" class="mt-3 text-xs text-white/50 underline">🏳️ انسحاب وإنهاء التحدي</button>
+  </div>
+</section>
+
+<!-- RESULT -->
+<section id="screen-result" class="hidden max-w-3xl mx-auto px-4 pb-16 text-center">
+  <div class="text-7xl mt-8 floatY">🏆</div>
+  <h2 id="winner-text" class="text-4xl font-bold mt-2"></h2>
+  <p id="winner-sub" class="text-white/70 mt-2"></p>
+  <div class="grid grid-cols-2 gap-3 mt-6">
+    <div class="glass rounded-2xl p-5"><div id="finalA-name" class="font-bold"></div><div id="finalA-score" class="text-5xl font-bold text-cyan-300"></div><div id="finalA-detail" class="text-xs text-white/60 mt-1"></div></div>
+    <div class="glass rounded-2xl p-5"><div id="finalB-name" class="font-bold"></div><div id="finalB-score" class="text-5xl font-bold text-pink-300"></div><div id="finalB-detail" class="text-xs text-white/60 mt-1"></div></div>
+  </div>
+  <div class="flex gap-2 justify-center mt-6 flex-wrap">
+    <button onclick="rematch()" class="px-8 py-3 rounded-xl font-bold text-black" style="background:linear-gradient(90deg,#FFC93C,#fb923c)">🔁 إعادة التحدي</button>
+    <button onclick="showScreen('setup')" class="px-8 py-3 rounded-xl glass font-bold">⚙️ تغيير الإعدادات</button>
+    <button onclick="showScreen('home')" class="px-8 py-3 rounded-xl glass font-bold">🏠 الرئيسية</button>
+  </div>
+</section>
+
+<div id="solo-box" class="hidden fixed inset-0 bg-black/70 z-50 grid place-items-center p-4">
+  <div class="glass rounded-3xl p-6 max-w-lg w-full pop" style="background:#211243">
+    <h3 id="solo-cat" class="font-bold text-xl"></h3>
+    <p id="solo-q" class="mt-3 font-bold text-lg leading-relaxed"></p>
+    <div id="solo-opts" class="grid gap-2 mt-4"></div>
+    <div id="solo-fb" class="text-center font-bold mt-3 min-h-[24px]"></div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="soloNext()" class="flex-1 py-3 rounded-xl font-bold text-black" style="background:#FFC93C">سؤال آخر</button>
+      <button onclick="document.getElementById('solo-box').classList.add('hidden')" class="flex-1 py-3 rounded-xl bg-white/10 font-bold">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<footer class="text-center text-white/40 text-xs pb-8">تحدي الأبطال © 2026 بخط الثمانية 🏆</footer>
+
+<script>
+// ================== الفئات ==================
+const CATS = [
+{id:'general', name:'معلومات عامة', icon:'🌍', g:'linear-gradient(135deg,#0ea5e9,#6366f1)'},
+{id:'islam', name:'ثقافة إسلامية', icon:'🕌', g:'linear-gradient(135deg,#10b981,#0d9488)'},
+{id:'sport', name:'رياضة', icon:'⚽', g:'linear-gradient(135deg,#22c55e,#a3e635)'},
+{id:'science', name:'علوم', icon:'🔬', g:'linear-gradient(135deg,#06b6d4,#3b82f6)'},
+{id:'history', name:'تاريخ', icon:'📜', g:'linear-gradient(135deg,#f59e0b,#b45309)'},
+{id:'geo', name:'جغرافيا', icon:'🗺️', g:'linear-gradient(135deg,#14b8a6,#22c55e)'},
+{id:'tech', name:'تقنية', icon:'💻', g:'linear-gradient(135deg,#8b5cf6,#6d28d9)'},
+{id:'lang', name:'لغة وأدب', icon:'📚', g:'linear-gradient(135deg,#fb7185,#ea580c)'},
+{id:'puzzle', name:'ألغاز وذكاء', icon:'🧩', g:'linear-gradient(135deg,#d946ef,#ec4899)'},
+{id:'art', name:'فن وسينما', icon:'🎬', g:'linear-gradient(135deg,#f43f5e,#991b1b)'},
+{id:'food', name:'طبخ ومطبخ', icon:'🍳', g:'linear-gradient(135deg,#fbbf24,#d97706)'},
+{id:'econ', name:'اقتصاد وأعمال', icon:'💰', g:'linear-gradient(135deg,#84cc16,#059669)'},
+];
+const QBANK = {
+general:[
+{q:'ما هي أكبر قارة في العالم من حيث المساحة؟',o:['أفريقيا','آسيا','أوروبا','أمريكا الشمالية'],a:1,d:'سهل'},
+{q:'كم عدد ألوان قوس قزح؟',o:['5','6','7','8'],a:2,d:'سهل'},
+{q:'ما هي أصغر دولة في العالم؟',o:['موناكو','الفاتيكان','سان مارينو','ليختنشتاين'],a:1,d:'متوسط'},
+{q:'كم عدد أيام السنة الكبيسة؟',o:['365','366','364','367'],a:1,d:'سهل'},
+{q:'ما هو أطول نهر في العالم؟',o:['الأمازون','النيل','اليانغتسي','المسيسيبي'],a:1,d:'متوسط'},
+{q:'ما هي اللغة الأكثر تحدثاً في العالم؟',o:['الإنجليزية','الإسبانية','الصينية (ماندرين)','الهندية'],a:2,d:'متوسط'},
+{q:'كم عدد قارات العالم؟',o:['5','6','7','8'],a:2,d:'سهل'},
+{q:'ما هي أكبر صحراء حارة في العالم؟',o:['صحراء الربع الخالي','الصحراء الكبرى','صحراء غوبي','صحراء كالاهاري'],a:1,d:'سهل'},
+{q:'في أي سنة كانت أول رحلة هبوط على القمر؟',o:['1965','1969','1972','1959'],a:1,d:'متوسط'},
+{q:'ما هو العنصر الأكثر وفرة في الكون؟',o:['الأكسجين','الكربون','الهيدروجين','الهيليوم'],a:2,d:'صعب'},
+{q:'ما هي أكبر دولة في العالم مساحة؟',o:['الصين','أمريكا','روسيا','كندا'],a:2,d:'سهل'},
+{q:'كم عدد أحرف الأبجدية الإنجليزية؟',o:['24','26','28','30'],a:1,d:'سهل'},
+{q:'ما هي عاصمة فرنسا؟',o:['مدريد','باريس','روما','لندن'],a:1,d:'سهل'},
+{q:'أي كوكب يعرف بحلقاته الجميلة؟',o:['المريخ','زحل','عطارد','الزهرة'],a:1,d:'سهل'},
+{q:'ما أسرع حيوان بري؟',o:['الأسد','الفهد','الغزال','النمر'],a:1,d:'متوسط'},
+{q:'كم ثانية في الدقيقة؟',o:['50','60','100','120'],a:1,d:'سهل'},
+{q:'ما هي أكبر محيطات العالم؟',o:['الهندي','الأطلسي','الهادئ','المتجمد'],a:2,d:'متوسط'},
+{q:'من اخترع المصباح الكهربائي؟',o:['أديسون','تسلا','نيوتن','غراهام بل'],a:0,d:'متوسط'},
+{q:'ما هي جنسية شركة سامسونج؟',o:['يابانية','صينية','كورية جنوبية','أمريكية'],a:2,d:'صعب'},
+{q:'كم عدد لاعبي الشطرنج؟',o:['1','2','4','6'],a:1,d:'سهل'},
+],
+islam:[
+{q:'كم عدد سور القرآن الكريم؟',o:['110','114','116','120'],a:1,d:'سهل'},
+{q:'ما هي أطول سورة في القرآن؟',o:['آل عمران','النساء','البقرة','المائدة'],a:2,d:'سهل'},
+{q:'من هو أول الخلفاء الراشدين؟',o:['عمر بن الخطاب','علي بن أبي طالب','أبو بكر الصديق','عثمان بن عفان'],a:2,d:'سهل'},
+{q:'في أي شهر نزل القرآن؟',o:['شعبان','رمضان','شوال','محرم'],a:1,d:'سهل'},
+{q:'كم عدد أبواب الجنة؟',o:['7','8','10','12'],a:1,d:'متوسط'},
+{q:'ما هي السورة التي تعدل ثلث القرآن؟',o:['الفاتحة','الإخلاص','يس','الملك'],a:1,d:'متوسط'},
+{q:'من هو النبي الذي ابتلعه الحوت؟',o:['موسى','يونس','أيوب','زكريا'],a:1,d:'سهل'},
+{q:'كم سنة دعا نوح عليه السلام قومه؟',o:['500','950','1000','100'],a:1,d:'متوسط'},
+{q:'ما أول مسجد بُني في الإسلام؟',o:['المسجد النبوي','المسجد الحرام','مسجد قباء','المسجد الأقصى'],a:2,d:'متوسط'},
+{q:'من هو الصحابي الملقب بأمين الأمة؟',o:['طلحة بن عبيد الله','أبو عبيدة بن الجراح','سعد بن أبي وقاص','الزبير بن العوام'],a:1,d:'صعب'},
+{q:'ما هي أول سورة نزلت كاملة؟',o:['العلق','الفاتحة','المدثر','البقرة'],a:1,d:'متوسط'},
+{q:'كم عدد أجزاء القرآن؟',o:['20','30','40','60'],a:1,d:'سهل'},
+{q:'من هو النبي الملقب بكليم الله؟',o:['عيسى','موسى','إبراهيم','محمد ﷺ'],a:1,d:'سهل'},
+{q:'ما هي ليلة خير من ألف شهر؟',o:['ليلة القدر','ليلة النصف','ليلة الجمعة','ليلة عرفة'],a:0,d:'سهل'},
+{q:'كم عدد الصلوات المفروضة؟',o:['3','4','5','6'],a:2,d:'سهل'},
+{q:'من أول من هاجر إلى المدينة؟',o:['حمزة','مصعب بن عمير','علي','عمر'],a:1,d:'صعب'},
+{q:'ما اسم أم النبي ﷺ؟',o:['خديجة','آمنة بنت وهب','حليمة','فاطمة'],a:1,d:'سهل'},
+{q:'في أي سنة كانت غزوة بدر؟',o:['1هـ','2هـ','3هـ','5هـ'],a:1,d:'متوسط'},
+{q:'ما هي السورة التي لا تبدأ بالبسملة؟',o:['الأنفال','التوبة','يونس','هود'],a:1,d:'متوسط'},
+{q:'من جمع القرآن في مصحف واحد؟',o:['أبو بكر ثم عثمان','عمر فقط','علي فقط','معاوية'],a:0,d:'صعب'},
+],
+sport:[
+{q:'كل كم سنة تقام الألعاب الأولمبية؟',o:['سنتين','3 سنوات','4 سنوات','5 سنوات'],a:2,d:'سهل'},
+{q:'كم عدد لاعبي فريق كرة القدم داخل الملعب؟',o:['10','11','12','9'],a:1,d:'سهل'},
+{q:'أين أقيمت كأس العالم 2022؟',o:['روسيا','قطر','البرازيل','أمريكا'],a:1,d:'سهل'},
+{q:'كم مدة مباراة كرة القدم الأصلية؟',o:['80 دقيقة','90 دقيقة','100 دقيقة','120 دقيقة'],a:1,d:'سهل'},
+{q:'في أي رياضة يُستخدم مصطلح (الشاه مات)؟',o:['الكاراتيه','الشطرنج','الملاكمة','التنس'],a:1,d:'متوسط'},
+{q:'كم عدد حلقات الشعار الأولمبي؟',o:['4','5','6','7'],a:1,d:'سهل'},
+{q:'ما هي الدولة الأكثر فوزاً بكأس العالم؟',o:['ألمانيا','الأرجنتين','البرازيل','إيطاليا'],a:2,d:'متوسط'},
+{q:'كم نقطة تُحسب للرمية الثلاثية في كرة السلة؟',o:['2','3','4','1'],a:1,d:'سهل'},
+{q:'في أي سنة أقيمت أول كأس عالم لكرة القدم؟',o:['1926','1930','1934','1938'],a:1,d:'صعب'},
+{q:'كم طول سباق الماراثون تقريباً؟',o:['30 كم','42 كم','50 كم','25 كم'],a:1,d:'متوسط'},
+{q:'كم شوطاً في مباراة كرة اليد؟',o:['شوطان','3 أشواط','4 أشواط','شوط واحد'],a:0,d:'متوسط'},
+{q:'أين نشأت رياضة الجودو؟',o:['الصين','اليابان','كوريا','البرازيل'],a:1,d:'متوسط'},
+{q:'كم عدد لاعبي الكرة الطائرة داخل الملعب للفريق؟',o:['5','6','7','11'],a:1,d:'سهل'},
+{q:'ما مدة الشوط الإضافي الواحد في كرة القدم؟',o:['10 دقائق','15 دقيقة','20 دقيقة','30 دقيقة'],a:1,d:'متوسط'},
+{q:'أي منتخب يلقب بالآزوري؟',o:['ألمانيا','إيطاليا','فرنسا','إسبانيا'],a:1,d:'صعب'},
+{q:'في التنس كم نقطة للفوز بالشوط؟ تحتاج',o:['3 كرات','4 نقاط على الأقل بفارق 2','نقطتين فقط','10 نقاط'],a:1,d:'صعب'},
+{q:'رياضة الفورمولا 1 خاصة بـ؟',o:['الدراجات','سباق السيارات','القوارب','الخيل'],a:1,d:'سهل'},
+{q:'كم ارتفاع سلة كرة السلة؟',o:['2.5م','3.05م','3.5م','2م'],a:1,d:'صعب'},
+{q:'من أين انطلقت الألعاب الأولمبية قديماً؟',o:['روما','اليونان','مصر','الصين'],a:1,d:'متوسط'},
+{q:'كم دقيقة مدة مباراة كرة السلة NBA؟',o:['40','48','60','36'],a:1,d:'صعب'},
+],
+science:[
+{q:'ما هو الغاز الذي نتنفسه للبقاء؟',o:['ثاني أكسيد الكربون','الأكسجين','النيتروجين','الهيدروجين'],a:1,d:'سهل'},
+{q:'كم عدد كواكب المجموعة الشمسية؟',o:['7','8','9','10'],a:1,d:'سهل'},
+{q:'ما هو أقرب كوكب إلى الشمس؟',o:['الزهرة','عطارد','المريخ','الأرض'],a:1,d:'سهل'},
+{q:'ما وحدة قياس شدة التيار الكهربائي؟',o:['الفولت','الأمبير','الواط','الأوم'],a:1,d:'متوسط'},
+{q:'ما هو العنصر الكيميائي الذي رمزه O؟',o:['الذهب','الأكسجين','الفضة','الحديد'],a:1,d:'سهل'},
+{q:'كم سرعة الضوء تقريباً؟',o:['300 ألف كم/ث','150 ألف كم/ث','500 ألف كم/ث','مليون كم/ث'],a:0,d:'صعب'},
+{q:'ما هو أكبر عضو في جسم الإنسان؟',o:['الكبد','القلب','الجلد','الرئة'],a:2,d:'متوسط'},
+{q:'ما هي الصيغة الكيميائية للماء؟',o:['CO2','H2O','O2','NaCl'],a:1,d:'سهل'},
+{q:'أي كوكب يُلقب بالكوكب الأحمر؟',o:['المشتري','المريخ','زحل','الزهرة'],a:1,d:'سهل'},
+{q:'ما القوة التي تجذب الأجسام نحو الأرض؟',o:['الاحتكاك','الجاذبية','المغناطيسية','الطفو'],a:1,d:'سهل'},
+{q:'كم عدد عظام جسم الإنسان البالغ؟',o:['106','206','306','406'],a:1,d:'متوسط'},
+{q:'ما الغاز الذي يملأ معظم الغلاف الجوي؟',o:['الأكسجين','النيتروجين','الهيدروجين','الهيليوم'],a:1,d:'متوسط'},
+{q:'ما وحدة قياس قوة العدسة؟',o:['الديوبتر','المتر','الواط','الديسيبل'],a:0,d:'صعب'},
+{q:'أي فيتامين يُصنع في الجلد عبر الشمس؟',o:['A','C','D','K'],a:2,d:'متوسط'},
+{q:'ما هو الكوكب الأكبر؟',o:['زحل','المشتري','نبتون','الأرض'],a:1,d:'سهل'},
+{q:'كم درجة غليان الماء؟',o:['90','100','110','120'],a:1,d:'سهل'},
+{q:'ما هو رمز الذهب؟',o:['Ag','Au','Gd','Go'],a:1,d:'متوسط'},
+{q:'أي خلايا الدم تحمل الأكسجين؟',o:['البيضاء','الحمراء','الصفائح','البلازما'],a:1,d:'سهل'},
+{q:'ما هو أقرب نجم للأرض؟',o:['الشعرى','الشمس','ألفا','النسر'],a:1,d:'متوسط'},
+{q:'كم عدد أرجل العنكبوت؟',o:['6','8','10','4'],a:1,d:'صعب'},
+],
+history:[
+{q:'في أي عام بدأت الحرب العالمية الثانية؟',o:['1914','1939','1945','1935'],a:1,d:'متوسط'},
+{q:'من هو مؤسس الدولة الأموية؟',o:['عمر بن عبدالعزيز','معاوية بن أبي سفيان','عبدالملك بن مروان','يزيد'],a:1,d:'متوسط'},
+{q:'أين قامت حضارة الفراعنة؟',o:['العراق','مصر','اليمن','الشام'],a:1,d:'سهل'},
+{q:'من هو القائد الذي فتح الأندلس؟',o:['موسى بن نصير','طارق بن زياد','عبدالرحمن الداخل','يوسف بن تاشفين'],a:1,d:'متوسط'},
+{q:'في أي سنة توحدت المملكة العربية السعودية؟',o:['1925','1932','1945','1902'],a:1,d:'متوسط'},
+{q:'ما هي أول حضارة عرفت الكتابة؟',o:['المصرية','السومرية','الصينية','اليونانية'],a:1,d:'صعب'},
+{q:'معركة حطين كانت بين المسلمين ومن؟',o:['المغول','الصليبيين','الفرس','الروم'],a:1,d:'متوسط'},
+{q:'من بنى مدينة بغداد؟',o:['هارون الرشيد','أبو جعفر المنصور','المأمون','المعتصم'],a:1,d:'متوسط'},
+{q:'كم استمرت الحرب العالمية الأولى؟',o:['سنتان','4 سنوات','6 سنوات','10 سنوات'],a:1,d:'متوسط'},
+{q:'سور الصين العظيم بُني أساساً لـ؟',o:['الزينة','الحماية من الغزو','السكن','التجارة'],a:1,d:'سهل'},
+{q:'من هو أول رئيس لأمريكا؟',o:['لينكولن','واشنطن','جيفرسون','روزفلت'],a:1,d:'سهل'},
+{q:'الدولة العثمانية عاصمتها؟',o:['أنقرة','إسطنبول','بورصة','دمشق'],a:1,d:'متوسط'},
+{q:'في أي عام سقطت الأندلس نهائياً؟',o:['1212','1492','711','1086'],a:1,d:'صعب'},
+{q:'من القائد المسلم في معركة القادسية؟',o:['خالد بن الوليد','سعد بن أبي وقاص','أبو عبيدة','عمرو بن العاص'],a:1,d:'متوسط'},
+{q:'أين وقعت معركة اليرموك؟',o:['العراق','الشام','مصر','الأندلس'],a:1,d:'متوسط'},
+{q:'من بنى الأهرامات؟',o:['الفراعنة','الرومان','الفرس','الإغريق'],a:0,d:'سهل'},
+{q:'الحضارة البابلية في؟',o:['مصر','العراق','سوريا','اليمن'],a:1,d:'سهل'},
+{q:'من هو صلاح الدين الأيوبي؟',o:['محرر القدس من الصليبيين','مؤسس الأمويين','قائد المغول','ملك الفرس'],a:0,d:'متوسط'},
+{q:'متى انتهت الحرب العالمية الثانية؟',o:['1943','1945','1947','1950'],a:1,d:'متوسط'},
+{q:'طريق الحرير كان للتجارة بين؟',o:['أوروبا وأمريكا','الصين والغرب','أفريقيا وآسيا','الهند فقط'],a:1,d:'صعب'},
+],
+geo:[
+{q:'ما هي عاصمة اليابان؟',o:['أوساكا','كيوتو','طوكيو','ناغويا'],a:2,d:'سهل'},
+{q:'ما هي أكبر دولة عربية مساحة؟',o:['السعودية','الجزائر','ليبيا','مصر'],a:1,d:'متوسط'},
+{q:'نهر الأمازون يقع في قارة؟',o:['أفريقيا','آسيا','أمريكا الجنوبية','أوروبا'],a:2,d:'سهل'},
+{q:'ما هي عاصمة أستراليا؟',o:['سيدني','ملبورن','كانبرا','بيرث'],a:2,d:'صعب'},
+{q:'أي محيط هو الأكبر؟',o:['الأطلسي','الهندي','الهادئ','المتجمد'],a:2,d:'سهل'},
+{q:'جبل إفرست يقع في سلسلة جبال؟',o:['الألب','الأنديز','الهيمالايا','الأطلس'],a:2,d:'متوسط'},
+{q:'ما هي الدولة التي فيها برج إيفل؟',o:['إيطاليا','فرنسا','إسبانيا','بلجيكا'],a:1,d:'سهل'},
+{q:'قناة السويس تربط بين؟',o:['الأحمر والمتوسط','العربي والمتوسط','الأحمر والعربي','المتوسط والأطلسي'],a:0,d:'متوسط'},
+{q:'ما هي عاصمة كندا؟',o:['تورونتو','فانكوفر','أوتاوا','مونتريال'],a:2,d:'صعب'},
+{q:'صحراء الربع الخالي تقع في؟',o:['شمال أفريقيا','الجزيرة العربية','آسيا الوسطى','أمريكا'],a:1,d:'سهل'},
+{q:'ما أطول أنهار أفريقيا؟',o:['الكونغو','النيل','النيجر','الزمبيزي'],a:1,d:'سهل'},
+{q:'عاصمة السعودية؟',o:['جدة','الرياض','مكة','الدمام'],a:1,d:'سهل'},
+{q:'أي دولة فيها شلالات نياغارا؟',o:['أمريكا وكندا','البرازيل','فرنسا','اليابان'],a:0,d:'متوسط'},
+{q:'البحر الميت بين؟',o:['السعودية ومصر','الأردن وفلسطين','تركيا واليونان','المغرب وإسبانيا'],a:1,d:'متوسط'},
+{q:'ما هي أكبر جزيرة في العالم؟',o:['سومطرة','غرينلاند','مدغشقر','بورنيو'],a:1,d:'صعب'},
+{q:'مضيق جبل طارق يفصل بين؟',o:['آسيا وأوروبا','أفريقيا وأوروبا','أمريكا وأوروبا','آسيا وأفريقيا'],a:1,d:'متوسط'},
+{q:'عاصمة إسبانيا؟',o:['برشلونة','مدريد','إشبيلية','فالنسيا'],a:1,d:'سهل'},
+{q:'نهر السين في أي مدينة؟',o:['لندن','باريس','روما','برلين'],a:1,d:'متوسط'},
+{q:'أعلى قمة في أفريقيا؟',o:['إفرست','كليمنجارو','أطلس','تبقال'],a:1,d:'صعب'},
+{q:'دولة فيها سور الصين؟',o:['اليابان','الصين','كوريا','منغوليا'],a:1,d:'سهل'},
+],
+tech:[
+{q:'من هو مؤسس شركة آبل؟',o:['بيل غيتس','ستيف جوبز','إيلون ماسك','مارك زوكربيرغ'],a:1,d:'سهل'},
+{q:'ماذا يعني اختصار WWW؟',o:['World Wide Web','World War Web','Web World Wide','Wide World Web'],a:0,d:'متوسط'},
+{q:'ما هي أكبر منصة فيديوهات؟',o:['تيك توك','فيسبوك','يوتيوب','نتفليكس'],a:2,d:'سهل'},
+{q:'أي مما يلي لغة لبناء المواقع؟',o:['HTML','فوتوشوب','ويندوز','وورد'],a:0,d:'سهل'},
+{q:'ما هو الذكاء الاصطناعي باختصار؟',o:['روبوت يمشي','محاكاة ذكاء البشر بالآلات','لعبة فيديو','نوع إنترنت'],a:1,d:'سهل'},
+{q:'شركة مطورة لنظام أندرويد؟',o:['آبل','سامسونج','جوجل','مايكروسوفت'],a:2,d:'سهل'},
+{q:'1 غيغابايت كم ميغابايت؟',o:['100','512','1024','2048'],a:2,d:'متوسط'},
+{q:'أقدم منصة من هذه؟',o:['ماي سبيس','انستغرام','تيك توك','سناب شات'],a:0,d:'صعب'},
+{q:'ماذا يفعل الماوس؟',o:['الطباعة','التحكم بالمؤشر','تشغيل الصوت','الشحن'],a:1,d:'سهل'},
+{q:'ما هي الحوسبة السحابية؟',o:['تخزين ومعالجة عبر الإنترنت','سحابة مطر','جهاز جديد','نوع فيروس'],a:0,d:'متوسط'},
+{q:'من مؤسس مايكروسوفت؟',o:['بيل غيتس','ستيف جوبز','جيف بيزوس','لاري بيج'],a:0,d:'سهل'},
+{q:'ما هو نظام iOS؟',o:['نظام آبل للجوال','نظام ألعاب','متصفح','برنامج صور'],a:0,d:'سهل'},
+{q:'ماذا يعني 5G؟',o:['الجيل الخامس للاتصالات','5 غيغا تخزين','5 ألعاب','سرعة 5'],a:0,d:'متوسط'},
+{q:'أي شركة تملك واتساب؟',o:['جوجل','ميتا','آبل','أمازون'],a:1,d:'متوسط'},
+{q:'لغة بايثون تستخدم في؟',o:['الطبخ','البرمجة وتحليل البيانات','الخياطة','البناء'],a:1,d:'سهل'},
+{q:'ما هو البلوك تشين؟',o:['سلسلة كتل لتسجيل البيانات','لعبة مكعبات','نوع كمبيوتر','فيروس'],a:0,d:'صعب'},
+{q:'وحدة قياس سرعة المعالج؟',o:['جيجاهرتز','متر','لتر','فولت'],a:0,d:'متوسط'},
+{q:'أول حاسوب شخصي شهير من؟',o:['IBM','تويوتا','سوني','نوكيا'],a:0,d:'صعب'},
+{q:'ما هو الواي فاي؟',o:['اتصال لاسلكي بالإنترنت','سلك كهرباء','نوع بطارية','شاحن'],a:0,d:'سهل'},
+{q:'شركة تسلا مشهورة بـ؟',o:['الهواتف','السيارات الكهربائية','الأكل','الملابس'],a:1,d:'سهل'},
+],
+lang:[
+{q:'كم عدد حروف اللغة العربية؟',o:['26','28','30','32'],a:1,d:'سهل'},
+{q:'شاعر معلقة (قفا نبك)؟',o:['عنترة','امرؤ القيس','زهير','طرفة'],a:1,d:'متوسط'},
+{q:'ما جمع كلمة (كتاب)؟',o:['كاتبون','كتب','مكتبات','كتّاب'],a:1,d:'سهل'},
+{q:'ما هو ضد كلمة (سريع)؟',o:['عاجل','بطيء','متحرك','قوي'],a:1,d:'سهل'},
+{q:'من مؤلف (مقدمة ابن خلدون)؟',o:['ابن خلدون','ابن سينا','الجاحظ','ابن رشد'],a:0,d:'متوسط'},
+{q:'أي كلمة فيها همزة قطع؟',o:['استخرج','أحمد','ابن','اسم'],a:1,d:'متوسط'},
+{q:'ما هو مثنى (قلم)؟',o:['أقلام','قلمان','قلمون','قليم'],a:1,d:'سهل'},
+{q:'من كاتب رواية البؤساء؟',o:['شكسبير','فيكتور هوغو','ديكنز','نجيب محفوظ'],a:1,d:'صعب'},
+{q:'أي الجمل صحيحة نحوياً؟',o:['حضر الطلابُ','حضر الطلابَ','حضر الطلابِ','حضر الطلابْ'],a:0,d:'متوسط'},
+{q:'ما معنى (اليراع)؟',o:['السيف','القلم','الفرس','النار'],a:1,d:'صعب'},
+{q:'ما مفرد (علماء)؟',o:['عليم','عالم','معلم','علامة'],a:1,d:'سهل'},
+{q:'من هو أمير الشعراء؟',o:['المتنبي','أحمد شوقي','حافظ إبراهيم','نزار قباني'],a:1,d:'متوسط'},
+{q:'ما جمع (قمر)؟',o:['قمور','أقمار','قمرات','قمران'],a:1,d:'سهل'},
+{q:'أي كلمة مؤنثة؟',o:['قلم','شمس','كتاب','باب'],a:1,d:'متوسط'},
+{q:'ما ضد (الظلام)؟',o:['السواد','النور','الليل','الغروب'],a:1,d:'سهل'},
+{q:'من مؤلف كليلة ودمنة مترجماً؟',o:['ابن المقفع','الجاحظ','ابن خلدون','سيبويه'],a:0,d:'صعب'},
+{q:'ما هي حروف العلة؟',o:['ا و ي','ب ت ث','س ش ص','م ن ل'],a:0,d:'سهل'},
+{q:'أي فعل ماض؟',o:['يكتب','كتب','اكتب','كتابة'],a:1,d:'سهل'},
+{q:'ما نوع (في)؟',o:['اسم','فعل','حرف جر','ضمير'],a:2,d:'متوسط'},
+{q:'من صاحب نهج البلاغة المنسوب إليه؟',o:['علي بن أبي طالب','معاوية','عمر','الحسن'],a:0,d:'صعب'},
+],
+puzzle:[
+{q:'شيء له أسنان ولا يعض؟',o:['المنشار','المشط','السحاب','كل ما سبق'],a:3,d:'متوسط'},
+{q:'ما الشيء الذي يصعد ولا ينزل؟',o:['الدخان','العمر','السلم','الطائرة'],a:1,d:'سهل'},
+{q:'معك 3 تفاحات وأخذت 2 كم معك؟',o:['1','2','3','5'],a:1,d:'سهل'},
+{q:'التالي: 2، 4، 8، 16، ...؟',o:['20','24','32','30'],a:2,d:'متوسط'},
+{q:'كلي ثقوب وأحفظ الماء؟',o:['الدلو','الإسفنج','الغربال','الكوب'],a:1,d:'متوسط'},
+{q:'يمشي بلا أرجل ويدخل الأذن؟',o:['الحلم','الصوت','الهواء','النوم'],a:1,d:'سهل'},
+{q:'كم مرة تطرح 10 من 100؟',o:['10','9','مرة واحدة','لا نهائي'],a:2,d:'صعب'},
+{q:'ابن الماء إذا تركته فيه مات؟',o:['السمك','الثلج','الملح','البخار'],a:1,d:'متوسط'},
+{q:'له رقبة بلا رأس؟',o:['القميص','الزجاجة','الغيتار','كل ما سبق'],a:3,d:'متوسط'},
+{q:'عدد × نفسه +5 = 30؟',o:['4','5','6','25'],a:1,d:'صعب'},
+{q:'له عين ولا يرى؟',o:['الإبرة','الإنسان','الكاميرا','المرآة'],a:0,d:'سهل'},
+{q:'أمامك دائماً ولا تراه؟',o:['الهواء','المستقبل','الأنف','الظل'],a:1,d:'متوسط'},
+{q:'يزيد وينقص في نفس الوقت؟',o:['العمر','الوزن','الحرارة','كل ما سبق'],a:0,d:'متوسط'},
+{q:'بيت بلا أبواب ولا نوافذ؟',o:['الخيمة','بيت الشعر','البيضة','الكهف'],a:2,d:'سهل'},
+{q:'تأكل منه ولا يؤكل؟',o:['الصحن','الملعقة','السكين','القدر'],a:0,d:'سهل'},
+{q:'إذا لمسته صرخ؟',o:['الجرس','البيض','الزجاج','كل ما سبق'],a:0,d:'متوسط'},
+{q:'له 4 أرجل ولا يمشي؟',o:['الحصان','الكرسي','الكلب','القطار'],a:1,d:'سهل'},
+{q:'يصعد للسماء ولا يعود؟',o:['الطائرة','الدخان','الصاروخ','البالون'],a:1,d:'متوسط'},
+{q:'نصفها في البحر ونصفها في البر؟',o:['السمكة','السلحفاة','السفينة','الملح'],a:1,d:'صعب'},
+{q:'ما الشيء الذي كلما أخذت منه كبر؟',o:['الحفرة','الجبل','المال','العلم'],a:0,d:'متوسط'},
+],
+art:[
+{q:'من لقبت بكوكب الشرق؟',o:['فيروز','أم كلثوم','أسمهان','وردة'],a:1,d:'سهل'},
+{q:'من مخرج فيلم الرسالة؟',o:['يوسف شاهين','مصطفى العقاد','عادل إمام','طارق العريان'],a:1,d:'متوسط'},
+{q:'آلة لها 6 أوتار غالباً؟',o:['العود','الغيتار','الكمان','البيانو'],a:1,d:'سهل'},
+{q:'من رسم الموناليزا؟',o:['بيكاسو','دافنشي','فان غوخ','مايكل أنجلو'],a:1,d:'سهل'},
+{q:'كم عدد أوتار العود؟',o:['5','6','12 (6 مزدوجة)','4'],a:2,d:'متوسط'},
+{q:'فيلم تيتانيك من بطولة؟',o:['براد بيت','ليوناردو وكيت','توم كروز','جوني ديب'],a:1,d:'سهل'},
+{q:'من مؤلف هاملت؟',o:['موليير','شكسبير','تشيخوف','توفيق الحكيم'],a:1,d:'متوسط'},
+{q:'دولة بوليوود؟',o:['مصر','الهند','أمريكا','تركيا'],a:1,d:'سهل'},
+{q:'من هو العندليب الأسمر؟',o:['فريد الأطرش','عبدالحليم حافظ','محمد عبدالوهاب','فايز أحمد'],a:1,d:'سهل'},
+{q:'أقدم آلة وترية عربية؟',o:['القانون','العود','الربابة','الناي'],a:1,d:'صعب'},
+{q:'مطرب أغنية (قارئة الفنجان)؟',o:['عبدالحليم','فريد','أم كلثوم','فيروز'],a:0,d:'متوسط'},
+{q:'فنان رسم (الصرخة)؟',o:['بيكاسو','مونش','دافنشي','مونه'],a:1,d:'صعب'},
+{q:'آلة الناي تصنع من؟',o:['الخشب والقصب','الحديد','البلاستيك فقط','الزجاج'],a:0,d:'سهل'},
+{q:'من هو موسيقار الأجيال؟',o:['فريد','عبدالوهاب','بليغ','السنباطي'],a:1,d:'متوسط'},
+{q:'فيلم مصري فيه (المتحف)؟',o:['عسل أسود','الناظر','الإرهاب والكباب','كل ما سبق'],a:0,d:'سهل'},
+{q:'مغنية (أعطني الناي)؟',o:['أم كلثوم','فيروز','وردة','نجاة'],a:1,d:'متوسط'},
+{q:'مسلسل باب الحارة بلد الإنتاج؟',o:['مصر','سوريا','الأردن','لبنان'],a:1,d:'سهل'},
+{q:'من ألف ليلة وليلة شخصيتها؟',o:['سندريلا','شهرزاد','عبلة','ليلى'],a:1,d:'سهل'},
+{q:'آلة القانون فيها كم وتر تقريباً؟',o:['10','78','20','5'],a:1,d:'صعب'},
+{q:'مخرج عربي عالمي راحل 2008؟',o:['يوسف شاهين','مصطفى العقاد','شادي عبدالسلام','كلهم'],a:0,d:'صعب'},
+],
+food:[
+{q:'المكون الأساسي للخبز؟',o:['الأرز','الدقيق','السكر','الحليب'],a:1,d:'سهل'},
+{q:'من أي بلد أصل البيتزا؟',o:['أمريكا','إيطاليا','فرنسا','اليونان'],a:1,d:'سهل'},
+{q:'الدولة المشهورة بالسوشي؟',o:['الصين','كوريا','اليابان','تايلاند'],a:2,d:'سهل'},
+{q:'الكنافة مشهورة في؟',o:['الشام','المغرب','الخليج فقط','أوروبا'],a:0,d:'سهل'},
+{q:'فيتامين البرتقال؟',o:['A','C','D','K'],a:1,d:'سهل'},
+{q:'الكبسة طبق وطني في؟',o:['السعودية','مصر','لبنان','المغرب'],a:0,d:'سهل'},
+{q:'طعام الصباح؟',o:['الغداء','الفطور','العشاء','السحور'],a:1,d:'سهل'},
+{q:'حليب بلا لاكتوز حيواني؟',o:['البقري','الصويا','الماعز','الجمل'],a:1,d:'متوسط'},
+{q:'الزعفران يُستخرج من؟',o:['الجذور','الزهرة','اللحاء','البذور'],a:1,d:'صعب'},
+{q:'كم وجبة رئيسية عادة؟',o:['2','3','5','1'],a:1,d:'سهل'},
+{q:'المنسف طبق وطني في؟',o:['الأردن','مصر','تونس','اليمن'],a:0,d:'متوسط'},
+{q:'المندي أصله من؟',o:['اليمن','تركيا','الهند','إيران'],a:0,d:'متوسط'},
+{q:'أي بهار لونه أصفر؟',o:['الفلفل','الكركم','الكمون','القرفة'],a:1,d:'سهل'},
+{q:'الكسكسي مشهور في؟',o:['المغرب العربي','الخليج','الشام','مصر'],a:0,d:'متوسط'},
+{q:'أغلى توابل العالم؟',o:['الهيل','الزعفران','الفلفل','القرفة'],a:1,d:'متوسط'},
+{q:'الفول طبق شعبي في؟',o:['مصر','اليابان','فرنسا','البرازيل'],a:0,d:'سهل'},
+{q:'من أين البن العربي الأصيل؟',o:['البرازيل','اليمن والحبشة','كولومبيا','الهند'],a:1,d:'صعب'},
+{q:'التمر غني بـ؟',o:['فيتامين C فقط','الألياف والطاقة','الماء فقط','الدهون'],a:1,d:'سهل'},
+{q:'أي زيت صحي للسلطة؟',o:['زيت الزيتون','زيت السيارات','زيت القلي المحروق','لا شيء'],a:0,d:'سهل'},
+{q:'السوشي يحتوي أساساً على؟',o:['الأرز والسمك','اللحم فقط','الخبز','المعكرونة'],a:0,d:'سهل'},
+],
+econ:[
+{q:'ما هي عملة اليابان؟',o:['الوون','الين','اليوان','الدولار'],a:1,d:'سهل'},
+{q:'أين مقر البنك الدولي؟',o:['نيويورك','واشنطن','لندن','جنيف'],a:1,d:'صعب'},
+{q:'ما هو التضخم؟',o:['ارتفاع الأسعار','انخفاض الأسعار','ثباتها','زيادة الرواتب فقط'],a:0,d:'متوسط'},
+{q:'عملة الاتحاد الأوروبي؟',o:['الدولار','الجنيه','اليورو','الفرنك'],a:2,d:'سهل'},
+{q:'أكبر سوق أسهم؟',o:['لندن','طوكيو','نيويورك','هونغ كونغ'],a:2,d:'متوسط'},
+{q:'من مؤسس أمازون؟',o:['جيف بيزوس','إيلون ماسك','بيل غيتس','وارن بافيت'],a:0,d:'سهل'},
+{q:'النفط يُقاس بـ؟',o:['الطن','البرميل','اللتر','الغالون فقط'],a:1,d:'سهل'},
+{q:'زكاة النقد؟',o:['2.5%','5%','10%','20%'],a:0,d:'متوسط'},
+{q:'عملة بريطانيا؟',o:['اليورو','الجنيه الإسترليني','الدولار','الفرنك'],a:1,d:'سهل'},
+{q:'خطة الإنفاق؟',o:['ميزانية','قرض','فائدة','سهم'],a:0,d:'سهل'},
+{q:'أغلى عملة عربياً غالباً؟',o:['الريال','الدينار الكويتي','الجنيه','الدرهم'],a:1,d:'متوسط'},
+{q:'ما هو السهم؟',o:['حصة ملكية في شركة','ورقة دين','عملة','قسيمة شراء'],a:0,d:'متوسط'},
+{q:'أكبر شركة نفط سعودية؟',o:['أرامكو','سابك','معادن','STC'],a:0,d:'سهل'},
+{q:'الضريبة المضافة في السعودية 2020 أصبحت؟',o:['5%','10%','15%','20%'],a:2,d:'متوسط'},
+{q:'عملة أمريكا؟',o:['اليورو','الدولار','الباوند','الين'],a:1,d:'سهل'},
+{q:'من هو أغنى رجل غالباً 2024؟',o:['برنار أرنو / ماسك / بيزوس','لاعب كرة','ممثل','طباخ'],a:0,d:'صعب'},
+{q:'ماذا يعني الادخار؟',o:['صرف كل شيء','توفير جزء من الدخل','الاقتراض','الاستثمار فقط'],a:1,d:'سهل'},
+{q:'البورصة خاصة بـ؟',o:['تداول الأسهم','بيع الخضار','الألعاب','السياحة'],a:0,d:'سهل'},
+{q:'التسويق يعني؟',o:['الإنتاج فقط','الترويج وبيع المنتجات','المحاسبة','الشحن'],a:1,d:'متوسط'},
+{q:'رؤية السعودية 2030 أطلقها؟',o:['الملك سلمان','ولي العهد محمد بن سلمان','وزير المالية','أرامكو'],a:1,d:'متوسط'},
+],
+};
+
+// ============ الحالة ============
+let settings={rounds:10,time:30,cats:CATS.map(c=>c.id)};
+let game=null,timerInt=null,pendingCat=null,pendingDiff=null;
+let AC=null,muted=false;
+function ac(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}}
+function tone(f,d=.12,type='sine',v=.18,when=0){if(muted)return;const c=ac();if(!c)return;const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type;o.frequency.value=f;const t=c.currentTime+when;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.start(t);o.stop(t+d+.02)}
+function correctSound(){tone(523,.12,'sine',.2,0);tone(659,.12,'sine',.2,.1);tone(784,.2,'sine',.22,.2);tone(1046,.25,'triangle',.15,.32)}
+function wrongSound(){tone(220,.2,'sawtooth',.15,0);tone(160,.3,'sawtooth',.15,.15)}
+function tickSound(){tone(950,.07,'square',.12,0)}
+function winSound(){[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,.18,'triangle',.2,i*.14))}
+function toggleMute(){muted=!muted;document.getElementById('muteBtn').textContent=muted?'🔇':'🔊'}
+
+function catName(id){const c=CATS.find(x=>x.id===id);return c?c.icon+' '+c.name:id}
+function ptsFor(d){return d==='سهل'?10:d==='متوسط'?20:30}
+
+function renderCats(){
+  document.getElementById('cats-grid').innerHTML=CATS.map(c=>`<div onclick="previewCat('${c.id}')" class="cat-card glass rounded-2xl p-5 text-center"><div class="w-14 h-14 mx-auto rounded-2xl grid place-items-center text-3xl" style="background:${c.g}">${c.icon}</div><div class="font-bold mt-2">${c.name}</div><div class="text-xs text-white/60 mt-1">${(QBANK[c.id]||[]).length} سؤال • اضغط للتجربة</div></div>`).join('');
+  document.getElementById('setup-cats').innerHTML=CATS.map(c=>`<div onclick="toggleCat('${c.id}')" id="pick-${c.id}" class="cat-card sel rounded-xl p-3 text-center text-sm font-bold bg-white/5">${c.icon} ${c.name}</div>`).join('');
+  renderHall();
+}
+function toggleCat(id){if(settings.cats.includes(id)){settings.cats=settings.cats.filter(x=>x!==id);document.getElementById('pick-'+id).classList.remove('sel')}else{settings.cats.push(id);document.getElementById('pick-'+id).classList.add('sel')}}
+function toggleAllCats(){settings.cats=CATS.map(c=>c.id);document.querySelectorAll('#setup-cats .cat-card').forEach(el=>el.classList.add('sel'))}
+document.querySelectorAll('.round-btn').forEach(b=>b.onclick=()=>{settings.rounds=+b.dataset.v;document.querySelectorAll('.round-btn').forEach(x=>{x.style.background='';x.style.borderColor='';x.classList.add('bg-white/10');x.classList.remove('text-black')});b.style.background='linear-gradient(90deg,#FFC93C,#fb923c)';b.style.borderColor='#FFC93C';b.classList.remove('bg-white/10');b.classList.add('text-black')});
+document.querySelectorAll('.time-btn').forEach(b=>b.onclick=()=>{settings.time=+b.dataset.v;document.querySelectorAll('.time-btn').forEach(x=>{x.style.background='';x.style.borderColor='';x.classList.add('bg-white/10');x.classList.remove('text-black')});b.style.background='linear-gradient(90deg,#FFC93C,#fb923c)';b.style.borderColor='#FFC93C';b.classList.remove('bg-white/10');b.classList.add('text-black')});
+function showScreen(n){['home','setup','game','result'].forEach(s=>document.getElementById('screen-'+s).classList.add('hidden'));document.getElementById('screen-'+n).classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+
+// تدريب
+let soloCat=null;
+function previewCat(id){soloCat=id;document.getElementById('solo-box').classList.remove('hidden');soloNext()}
+function quickSolo(){const ids=Object.keys(QBANK);soloCat=ids[Math.floor(Math.random()*ids.length)];document.getElementById('solo-box').classList.remove('hidden');soloNext()}
+function soloNext(){const arr=QBANK[soloCat];const raw=arr[Math.floor(Math.random()*arr.length)];const s=shuffledOptions(raw);const q={q:raw.q,o:s.opts,a:s.a};document.getElementById('solo-cat').textContent=catName(soloCat);document.getElementById('solo-q').textContent=q.q;document.getElementById('solo-fb').textContent='';const box=document.getElementById('solo-opts');box.innerHTML='';q.o.forEach((t,i)=>{const b=document.createElement('button');b.className='opt-btn text-right px-4 py-3 rounded-xl bg-white/10 border border-white/15 font-bold';b.textContent=(['أ','ب','ج','د'][i])+' — '+t;b.onclick=()=>{[...box.children].forEach((x,j)=>{x.disabled=true;if(j===q.a)x.classList.add('opt-correct');else if(x===b)x.classList.add('opt-wrong')});const ok=i===q.a;document.getElementById('solo-fb').textContent=ok?'🎉 أحسنت! +10':'😅 خطأ! الصح: '+q.o[q.a];if(ok){correctSound();launchConfetti(60)}else{wrongSound()}bigFx(ok?'🎉':'😞',ok?'أحسنت!':'حاول مجدداً',ok)};box.appendChild(b)})}
+
+// بدء المعركة
+function startBattle(){
+  if(!settings.cats.length){alert('اختر فئة واحدة على الأقل!');return}
+  const nameA=document.getElementById('teamA-name').value.trim()||'الفريق الأول';
+  const nameB=document.getElementById('teamB-name').value.trim()||'الفريق الثاني';
+  const mk=()=>({fifty:1,hint:1,time:1,change:1,skip:1,x2:1});
+  game={nameA,nameB,rounds:settings.rounds,time:settings.time,total:settings.rounds,idx:0,scoreA:0,scoreB:0,correctA:0,wrongA:0,correctB:0,wrongB:0,streakA:0,streakB:0,turn:'A',life:{A:mk(),B:mk()},used:new Set(),current:null,tLeft:settings.time,x2:false,locked:false};
+  document.getElementById('round-total').textContent=game.total;
+  showScreen('game');showPick(true);
+}
+function rematch(){startBattle()}
+function quitGame(){clearInterval(timerInt);showScreen('home')}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+// ===== مرحلة اختيار الفئة والصعوبة =====
+function showPick(first=false){
+  if(!first)game.turn=game.turn==='A'?'B':'A';
+  if(game.idx>=game.total){endGame();return}
+  pendingCat=null;pendingDiff=null;
+  document.getElementById('pick-phase').classList.remove('hidden');
+  document.getElementById('q-phase').classList.add('hidden');
+  const tn=game.turn==='A'?game.nameA:game.nameB;
+  const dot=game.turn==='A'?'🔵':'🟣';
+  document.getElementById('pick-title').innerHTML=`دور فريق <span class="${game.turn==='A'?'text-cyan-300':'text-pink-300'}">${tn}</span> ${dot} — اختر فئتك وصعوبتك!`;
+  document.getElementById('round-now').textContent=game.idx+1;
+  document.getElementById('prog').style.width=(game.idx/game.total*100)+'%';
+  const pc=document.getElementById('pick-cats');pc.innerHTML='';
+  settings.cats.forEach(id=>{const c=CATS.find(x=>x.id===id);
+    const d=document.createElement('div');d.className='cat-card rounded-xl p-3 text-center bg-white/5 font-bold text-sm';d.id='pc-'+id;
+    d.innerHTML=`<div class="text-2xl">${c.icon}</div>${c.name}`;
+    d.onclick=()=>selectCat(id);pc.appendChild(d)});
+  ['easy','mid','hard'].forEach(k=>document.getElementById('diff-'+k).className='diff-card rounded-2xl p-4 text-center bg-white/5');
+  updateStartBtn();updateScore();
+}
+function selectCat(id){pendingCat=id;document.querySelectorAll('#pick-cats .cat-card').forEach(e=>e.classList.remove('sel'));document.getElementById('pc-'+id).classList.add('sel');tone(600,.08);updateStartBtn()}
+function selectDiff(d){pendingDiff=d;document.getElementById('diff-easy').className='diff-card rounded-2xl p-4 text-center bg-white/5'+(d==='سهل'?' sel-easy':'');document.getElementById('diff-mid').className='diff-card rounded-2xl p-4 text-center bg-white/5'+(d==='متوسط'?' sel-mid':'');document.getElementById('diff-hard').className='diff-card rounded-2xl p-4 text-center bg-white/5'+(d==='صعب'?' sel-hard':'');tone(d==='سهل'?500:d==='متوسط'?650:800,.1);updateStartBtn()}
+function updateStartBtn(){const b=document.getElementById('btn-start-q');b.disabled=!(pendingCat&&pendingDiff);b.textContent=(pendingCat&&pendingDiff)?`🎲 اعرض سؤال ${catName(pendingCat)} — ${pendingDiff} (${ptsFor(pendingDiff)} نقطة)`:'🎲 اختر الفئة والصعوبة أولاً'}
+function confirmPick(){if(!(pendingCat&&pendingDiff))return;showQuestion(pendingCat,pendingDiff)}
+function pickQuestion(catId,diff){
+  const key=q=>catId+'|'+q.q;
+  let cands=(QBANK[catId]||[]).filter(q=>q.d===diff&&!game.used.has(key(q)));
+  if(!cands.length)cands=(QBANK[catId]||[]).filter(q=>!game.used.has(key(q)));
+  if(!cands.length){let all=[];settings.cats.forEach(id=>(QBANK[id]||[]).forEach(q=>{if(!game.used.has(id+'|'+q.q))all.push({...q,cat:id})}));if(all.length){const p=all[Math.floor(Math.random()*all.length)];game.used.add(p.cat+'|'+p.q);return p}}
+  else{const q=cands[Math.floor(Math.random()*cands.length)];game.used.add(key(q));return {...q,cat:catId}}
+  // نفدت الأسئلة — أعد التدوير
+  const fb=(QBANK[catId]||[]);const q=fb[Math.floor(Math.random()*fb.length)];return {...q,cat:catId};
+}
+
+// ===== عرض السؤال (الخيارات تُخلط وتكون متقاربة) =====
+function shuffledOptions(q){
+  const arr=q.o.map((t,i)=>({t,ok:i===q.a}));
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+  return {opts:arr.map(x=>x.t),a:arr.findIndex(x=>x.ok)};
+}
+function showQuestion(catId,diffChosen){
+  const raw=pickQuestion(catId,diffChosen);
+  const pts=ptsFor(diffChosen);
+  const s=shuffledOptions(raw);
+  const q={q:raw.q,o:s.opts,a:s.a};
+  game.current={cat:raw.cat||catId,diff:diffChosen,q,pts,raw};
+  game.x2=false;game.locked=false;
+  document.getElementById('pick-phase').classList.add('hidden');
+  document.getElementById('q-phase').classList.remove('hidden');
+  document.getElementById('q-cat').textContent=catName(game.current.cat);
+  document.getElementById('q-diff').textContent=`${diffChosen} • ${pts} نقطة`;
+  document.getElementById('q-diff').style.color=diffChosen==='سهل'?'#22c55e':diffChosen==='متوسط'?'#f59e0b':'#ef4444';
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-feedback').textContent='';
+  document.getElementById('btn-next').classList.add('hidden');
+  const box=document.getElementById('q-opts');box.innerHTML='';
+  const qb=document.getElementById('q-box');qb.classList.remove('pop');void qb.offsetWidth;qb.classList.add('pop');
+  q.o.forEach((t,i)=>{const b=document.createElement('button');b.className='opt-btn text-right px-4 py-3 rounded-xl bg-white/5 border-2 border-white/10 font-bold text-base';b.innerHTML=`<span class="inline-grid place-items-center w-7 h-7 rounded-lg font-bold ml-2 text-sm" style="background:#ffffff18">${['أ','ب','ج','د'][i]}</span> ${t}`;b.dataset.i=i;b.onclick=()=>answer(i);box.appendChild(b)});
+  updateScore();startTimer();
+}
+function updateScore(){
+  document.getElementById('scoreA-name').textContent=game.nameA+' 🔵';
+  document.getElementById('scoreB-name').textContent=game.nameB+' 🟣';
+  const sa=document.getElementById('scoreA'),sb=document.getElementById('scoreB');
+  sa.textContent=game.scoreA;sb.textContent=game.scoreB;
+  sa.classList.remove('bump');sb.classList.remove('bump');void sa.offsetWidth;
+  document.getElementById('correctA').textContent=game.correctA;document.getElementById('wrongA').textContent=game.wrongA;
+  document.getElementById('correctB').textContent=game.correctB;document.getElementById('wrongB').textContent=game.wrongB;
+  document.getElementById('streakA').textContent=game.streakA;document.getElementById('streakB').textContent=game.streakB;
+  const L=game.life[game.turn];
+  document.getElementById('c5050').textContent=`(${L.fifty})`;document.getElementById('cHint').textContent=`(${L.hint})`;
+  document.getElementById('cTime').textContent=`(${L.time})`;document.getElementById('cChange').textContent=`(${L.change})`;
+  document.getElementById('cSkip').textContent=`(${L.skip})`;document.getElementById('cX2').textContent=`(${L.x2})`;
+  document.getElementById('turn-label').textContent=game.turn==='A'?`دور: ${game.nameA} 🔵`:`دور: ${game.nameB} 🟣`;
+  document.getElementById('cardA').classList.toggle('turnA',game.turn==='A');
+  document.getElementById('cardB').classList.toggle('turnB',game.turn==='B');
+  const map={fifty:'lb5050',hint:'lbHint',time:'lbTime',change:'lbChange',skip:'lbSkip',x2:'lbX2'};
+  Object.keys(map).forEach(k=>{const el=document.getElementById(map[k]);if(el)el.disabled=L[k]<=0||game.locked;});
+}
+function startTimer(){
+  clearInterval(timerInt);game.tLeft=game.time;
+  const arc=document.getElementById('timer-arc'),num=document.getElementById('timer-num'),wrap=document.getElementById('timer-wrap');
+  const total=119.4;
+  const draw=()=>{num.textContent=game.tLeft;arc.style.strokeDashoffset=(total*(1-game.tLeft/game.time)).toFixed(1);
+    const danger=game.tLeft<=5;arc.style.stroke=danger?'#ef4444':'#FFC93C';num.classList.toggle('timer-danger',danger);wrap.classList.toggle('pulseT',danger)};
+  draw();
+  timerInt=setInterval(()=>{if(game.locked){clearInterval(timerInt);return}
+    game.tLeft--;draw();
+    if(game.tLeft<=5&&game.tLeft>0)tickSound(); // 🔊 صوت عد آخر 5 ثواني
+    if(game.tLeft<=0){clearInterval(timerInt);timeout()}
+  },1000);
+}
+function lockOpts(){[...document.getElementById('q-opts').children].forEach(b=>b.disabled=true)}
+function answer(i){
+  if(game.locked)return;game.locked=true;clearInterval(timerInt);
+  const {q,pts:base}=game.current;let pts=base+(game.x2?base:0);
+  const btns=[...document.getElementById('q-opts').children];lockOpts();
+  const ok=i===q.a;btns[q.a].classList.add('opt-correct');if(!ok)btns[i].classList.add('opt-wrong');
+  const fb=document.getElementById('q-feedback');const tn=game.turn==='A'?game.nameA:game.nameB;
+  if(ok){
+    if(game.turn==='A'){game.scoreA+=pts;game.correctA++;game.streakA++;game.streakB=0}else{game.scoreB+=pts;game.correctB++;game.streakB++;game.streakA=0}
+    const st=game.turn==='A'?game.streakA:game.streakB;
+    fb.innerHTML=`🎉 إجابة صحيحة! <span class="text-gold">+${pts}</span> لفريق ${tn}`;
+    fb.style.color='#22c55e';correctSound();launchConfetti(140);bigFx('🎉',`+${pts} لـ ${tn}`,true);
+    (game.turn==='A'?document.getElementById('scoreA'):document.getElementById('scoreB')).classList.add('bump');
+    if(st%4===0){
+      if(game.turn==='A')game.scoreA+=10;else game.scoreB+=10;
+      setTimeout(()=>showBonusOverlay(tn),600);
+    }
+  }else{
+    if(game.turn==='A'){game.wrongA++;game.streakA=0}else{game.wrongB++;game.streakB=0}
+    fb.textContent=`💔 إجابة خاطئة! الصحيح: ${q.o[q.a]}`;
+    fb.style.color='#ef4444';wrongSound();shakeScreen();bigFx('😞','إجابة خاطئة!',false);
+  }
+  updateScore();game.idx++;document.getElementById('prog').style.width=(game.idx/game.total*100)+'%';
+  document.getElementById('btn-next').textContent=game.idx>=game.total?'🏁 عرض النتيجة':'التالي: اختيار الفريق الآخر ⬅';
+  document.getElementById('btn-next').classList.remove('hidden');
+}
+function timeout(){
+  if(game.locked)return;game.locked=true;
+  const {q}=game.current;lockOpts();
+  [...document.getElementById('q-opts').children][q.a].classList.add('opt-correct');
+  if(game.turn==='A'){game.wrongA++;game.streakA=0}else{game.wrongB++;game.streakB=0}
+  const fb=document.getElementById('q-feedback');fb.textContent=`⏰ انتهى الوقت! الصحيح: ${q.o[q.a]}`;fb.style.color='#f59e0b';
+  wrongSound();shakeScreen();bigFx('⏰','انتهى الوقت!',false);
+  updateScore();game.idx++;document.getElementById('prog').style.width=(game.idx/game.total*100)+'%';
+  document.getElementById('btn-next').textContent=game.idx>=game.total?'🏁 عرض النتيجة':'التالي ⬅';
+  document.getElementById('btn-next').classList.remove('hidden');
+}
+function goNext(){if(game.idx>=game.total)endGame();else showPick(false)}
+
+// ===== 6 وسائل مساعدة (مرة واحدة لكل فريق) =====
+function life(){return game.life[game.turn]}
+function makeHint(q){
+  const correct=((q.o&&q.o[q.a])||'').trim();
+  if(!correct)return '💡 تلميح مقرّب: ركّز وقارن بين الخيارات المتقاربة، واستبعد الأبعد!';
+  const first=correct[0];
+  const len=correct.replace(/\s/g,'').length;
+  const last=correct[correct.length-1];
+  return `💡 تلميح مقرّب: الإجابة تبدأ بحرف "${first}" وتنتهي بحرف "${last}" وطولها حوالي ${len} أحرف — قارن الخيارات المتقاربة وركّز!`;
+}
+function use5050(){if(!game||game.locked||life().fifty<=0)return;life().fifty--;const {q}=game.current;const btns=[...document.getElementById('q-opts').children];shuffle(btns.filter(b=>+b.dataset.i!==q.a)).slice(0,2).forEach(b=>{b.disabled=true;b.classList.add('opt-hide')});tone(700,.1);updateScore()}
+function useHint(){if(!game||game.locked||life().hint<=0)return;life().hint--;const {q}=game.current;document.getElementById('q-feedback').textContent=makeHint(q);document.getElementById('q-feedback').style.color='#22d3ee';tone(800,.1);updateScore()}
+function useExtraTime(){if(!game||game.locked||life().time<=0)return;life().time--;game.tLeft+=15;document.getElementById('q-feedback').textContent='⏳ تمت إضافة 15 ثانية!';document.getElementById('q-feedback').style.color='#22d3ee';tone(600,.15);updateScore()}
+function useChange(){if(!game||game.locked||life().change<=0)return;life().change--;clearInterval(timerInt);const c=game.current;showQuestion(c.cat,c.diff);document.getElementById('q-feedback').textContent='🔄 سؤال جديد من نفس الفئة والصعوبة!';document.getElementById('q-feedback').style.color='#a78bfa';updateScore()}
+function useSkip(){if(!game||game.locked||life().skip<=0)return;life().skip--;clearInterval(timerInt);game.idx++;document.getElementById('prog').style.width=(game.idx/game.total*100)+'%';document.getElementById('q-feedback').textContent='⏭️ تم التخطي — الدور ينتقل للفريق الآخر';tone(500,.15);setTimeout(()=>{if(game.idx>=game.total)endGame();else showPick(false)},700)}
+function useX2(){if(!game||game.locked||life().x2<=0||game.x2)return;life().x2--;game.x2=true;const c=game.current;document.getElementById('q-diff').textContent=`${c.diff} • ${c.pts*2} نقطة 🔥 مضاعفة مفعّلة!`;document.getElementById('q-feedback').textContent='✖️ المضاعفة مفعّلة! النقاط ×2 🔥';document.getElementById('q-feedback').style.color='#FFC93C';tone(900,.15);updateScore()}
+
+// ===== تفاعلات =====
+function showBonusOverlay(teamName){
+  updateScore();
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:linear-gradient(135deg,#052e16ee,#14532dee);backdrop-filter:blur(4px);animation:pop .3s ease';
+  ov.innerHTML=`<div class="text-center pop" style="padding:24px">
+    <div style="font-size:4.5rem">🔥🔥🔥</div>
+    <div class="font-bold" style="font-size:2.2rem;color:#FFC93C">بونص +10 درجات!</div>
+    <div class="font-bold" style="font-size:1.3rem;color:#fff">فريق ${teamName} حقق 4 إجابات صحيحة متتالية 🎉</div>
+    <div style="color:#bbf7d0">زادت نقاط الفريق 10 درجات!</div>
+  </div>`;
+  document.body.appendChild(ov);
+  [523,659,784,1046].forEach((f,i)=>tone(f,.2,'triangle',.22,i*.12));
+  launchConfetti(200);
+  setTimeout(()=>ov.remove(),2600);
+}
+function bigFx(emoji,txt,good){
+  const layer=document.getElementById('fx-layer');layer.innerHTML='';
+  const d=document.createElement('div');d.className='text-center pop';
+  d.innerHTML=`<div class="fx-big">${emoji}</div><div class="font-bold text-2xl mt-2" style="color:${good?'#22c55e':'#f87171'};text-shadow:0 4px 20px #000">${txt}</div>`;
+  layer.appendChild(d);setTimeout(()=>layer.innerHTML='',good?1600:1300);
+}
+function shakeScreen(){document.body.classList.remove('shake');void document.body.offsetWidth;document.body.classList.add('shake');setTimeout(()=>document.body.classList.remove('shake'),500)}
+const cvs=document.getElementById('confetti'),ctx=cvs.getContext('2d');let parts=[],confRun=false;
+function sizeCanvas(){cvs.width=innerWidth;cvs.height=innerHeight}
+addEventListener('resize',sizeCanvas);sizeCanvas();
+function launchConfetti(n=120){
+  const colors=['#FFC93C','#f472b6','#22d3ee','#a78bfa','#22c55e','#fb923c','#fff'];
+  for(let i=0;i<n;i++)parts.push({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*0.35,vx:(Math.random()-.5)*12,vy:Math.random()*-9-2,g:.35,s:Math.random()*8+4,c:colors[i%colors.length],r:Math.random()*Math.PI,vr:(Math.random()-.5)*.3,l:1});
+  if(!confRun){confRun=true;requestAnimationFrame(confTick)}
+}
+function confTick(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.r+=p.vr;p.l-=.008;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.globalAlpha=Math.max(p.l,0);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6);ctx.restore()});
+  parts=parts.filter(p=>p.l>0&&p.y<innerHeight+50);
+  if(parts.length)requestAnimationFrame(confTick);else{confRun=false;ctx.clearRect(0,0,cvs.width,cvs.height)}
+}
+
+function endGame(){
+  clearInterval(timerInt);showScreen('result');
+  let t,s;
+  if(game.scoreA>game.scoreB){t=`🏆 فاز فريق ${game.nameA}!`;s=`تفوق بفارق ${game.scoreA-game.scoreB} نقطة 🎉`}
+  else if(game.scoreB>game.scoreA){t=`🏆 فاز فريق ${game.nameB}!`;s=`تفوق بفارق ${game.scoreB-game.scoreA} نقطة 🎉`}
+  else{t=`🤝 تعادل!`;s=`الفريقان متساويان — الإعادة تحسمها!`}
+  document.getElementById('winner-text').textContent=t;document.getElementById('winner-sub').textContent=s;
+  document.getElementById('finalA-name').textContent=game.nameA+' 🔵';
+  document.getElementById('finalB-name').textContent=game.nameB+' 🟣';
+  document.getElementById('finalA-score').textContent=game.scoreA;
+  document.getElementById('finalB-score').textContent=game.scoreB;
+  document.getElementById('finalA-detail').textContent=`✅ ${game.correctA} • ❌ ${game.wrongA} • 🔥 ${game.streakA}`;
+  document.getElementById('finalB-detail').textContent=`✅ ${game.correctB} • ❌ ${game.wrongB} • 🔥 ${game.streakB}`;
+  saveHall();winSound();launchConfetti(220);
+}
+function saveHall(){try{const h=JSON.parse(localStorage.getItem('champs_hall')||'[]');h.unshift({a:game.nameA,sa:game.scoreA,b:game.nameB,sb:game.scoreB,d:new Date().toLocaleDateString('ar')});localStorage.setItem('champs_hall',JSON.stringify(h.slice(0,5)));renderHall()}catch(e){}}
+function renderHall(){try{const h=JSON.parse(localStorage.getItem('champs_hall')||'[]');if(!h.length)return;document.getElementById('hall').innerHTML=h.map((r,i)=>`<div class="flex justify-between py-2 ${i<h.length-1?'border-b border-white/10':''}"><span>${['🥇','🥈','🥉','🏅','🏅'][i]} ${r.a} <b class="text-gold">${r.sa}</b> × ${r.b} <b class="text-gold">${r.sb}</b></span><span class="text-white/40">${r.d}</span></div>`).join('')}catch(e){}}
+renderCats();
+</script>
+</body>
+</html>
