@@ -1,0 +1,222 @@
+<!-- snapshot: v1-baseline • 2026-10-16 • نسخة محفوظة في snapshots/2026-10-16_v1-baseline/ وسجلها في SNAPSHOTS.md -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بنك الأسئلة | تحدي الأبطال</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Aref+Ruqaa:wght@700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="qbank.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'IBM Plex Sans Arabic',Tahoma,sans-serif}
+body{background:#f1f0eb;color:#222;min-height:100vh}
+header.top{position:sticky;top:0;z-index:50;background:#150a2e;color:#fff;padding:12px 16px;box-shadow:0 2px 12px #0005}
+.top-in{max-width:1000px;margin:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top h1{font-size:1.2rem;font-weight:700;white-space:nowrap}
+.top h1 small{color:#FFC93C}
+#search{flex:1;min-width:160px;padding:10px 14px;border-radius:12px;border:0;outline:0;font-size:.95rem}
+.btn{padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:700;font-size:.85rem;background:#ffffff22;color:#fff;border:1px solid #ffffff33}
+.btn.gold{background:#FFC93C;color:#000;border-color:#FFC93C}
+main{max-width:1000px;margin:auto;padding:16px 12px 60px}
+#stats{text-align:center;color:#666;font-size:.85rem;margin:6px 0 12px}
+nav.pills{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 12px}
+nav.pills a{flex:0 0 auto;text-decoration:none;color:#fff;font-size:.8rem;font-weight:700;padding:8px 14px;border-radius:999px}
+section.cat{border-radius:18px;margin-bottom:22px;overflow:hidden;background:#fff;box-shadow:0 3px 14px #0001}
+.cat-head{display:flex;align-items:center;gap:12px;padding:14px 16px;color:#fff}
+.cat-head h2{font-size:1.25rem}
+.cat-head .count{font-size:.75rem;opacity:.85}
+.cat-icon{font-size:2rem;line-height:1}
+.fold{margin-inline-start:auto;background:#ffffff2e;color:#fff;border:0;border-radius:10px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:.8rem}
+section.closed .q-list{display:none}
+.q-list{padding:12px;display:grid;gap:10px}
+article.q{border-radius:12px;padding:10px 12px;cursor:pointer}
+.q-top{display:flex;gap:10px;align-items:flex-start}
+.q-num{flex:0 0 auto;min-width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:.85rem}
+.q-top p{flex:1;font-weight:700;font-size:.95rem;line-height:1.7}
+.dif{flex:0 0 auto;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:999px}
+ol.opts{list-style:none;margin-top:8px;display:grid;gap:6px}
+ol.opts li{padding:8px 12px;border-radius:10px;font-size:.88rem;display:flex;gap:8px;align-items:center}
+ol.opts li::before{content:attr(data-l);font-weight:700;font-size:.75rem;opacity:.6}
+body:not(.show-answers) article.q:not(.revealed) li.ok{font-weight:400}
+body:not(.show-answers) article.q:not(.revealed) li.ok .tick{display:none}
+.tick{margin-inline-start:auto;font-weight:700}
+body.show-answers li.ok .tick{display:inline}
+article.q:not(.revealed):not(.show-answers) li.ok{border-style:dashed}
+li.ok{font-weight:700}
+.hint-line{font-size:.72rem;opacity:.65;margin-top:6px}
+article.q.flash{outline:3px solid #FFC93C;outline-offset:2px}
+/* ===== هويات الفئات الـ12 ===== */
+.t-general{background:linear-gradient(180deg,#e3f2fd,#fff)}
+.t-general .cat-head{background:linear-gradient(90deg,#0288d1,#26c6da)}
+.t-general .q-num{background:#0288d1;color:#fff}
+.t-general ol.opts li{background:#e1f5fe;border:1px solid #b3e5fc}
+.t-general li.ok{background:#c8e6c9;border-color:#66bb6a}
+.t-general .dif{background:#0288d1;color:#fff}
+.t-islam{background:#f6f1e3}
+.t-islam .cat-head{background:linear-gradient(90deg,#065f46,#047857);border-bottom:4px double #d4af37;font-family:'Aref Ruqaa',serif}
+.t-islam .cat-head h2{font-family:'Aref Ruqaa',serif}
+.t-islam article.q{border:2px solid #d4af37;background:#fffdf5}
+.t-islam .q-num{background:#065f46;color:#d4af37}
+.t-islam ol.opts li{background:#fefce8;border:1px solid #e7e0c3}
+.t-islam li.ok{background:#d1fae5;box-shadow:inset 0 0 0 2px #d4af37}
+.t-islam .dif{background:#065f46;color:#d4af37}
+.t-sport .cat-head{background:repeating-linear-gradient(90deg,#2e7d32 0 30px,#388e3c 30px 60px)}
+.t-sport article.q{background:#f1f8e9;border-inline-start:6px solid #43a047}
+.t-sport .q-num{background:#2e7d32;color:#fff;border-radius:50%}
+.t-sport ol.opts li{background:#fff;border:1px solid #c5e1a5}
+.t-sport li.ok{background:#c8e6c9;border:1px solid #43a047}
+.t-sport .dif{background:#2e7d32;color:#fff}
+.t-science{background:#0b1020}
+.t-science .cat-head{background:linear-gradient(90deg,#0b1020,#123);border-bottom:2px solid #22d3ee}
+.t-science article.q{background:#111a30;border:1px solid #22d3ee55;color:#e2e8f0}
+.t-science .q-top p{color:#fff}
+.t-science .q-num{background:#22d3ee;color:#000;font-family:'IBM Plex Mono',monospace}
+.t-science ol.opts li{background:#0b1020;border:1px dashed #22d3ee66;color:#cffafe;font-family:'IBM Plex Mono',monospace;font-size:.82rem}
+.t-science li.ok{background:#083344;border-style:solid;color:#a5f3fc}
+.t-science .dif{background:#22d3ee;color:#000}
+.t-history{background:#efe6d0}
+.t-history .cat-head{background:linear-gradient(90deg,#6d4c2f,#8d6e4a)}
+.t-history .cat-head h2{font-family:Georgia,serif;letter-spacing:.5px}
+.t-history article.q{background:#faf5e9;border:1px solid #c9b183;box-shadow:2px 2px 0 #c9b183}
+.t-history .q-num{background:#6d4c2f;color:#f5eeda;font-family:Georgia,serif}
+.t-history ol.opts li{background:transparent;border-bottom:1px dotted #a98f63;border-radius:0}
+.t-history li.ok{background:#e8dcc0;color:#4a351d}
+.t-history .dif{background:transparent;border:2px solid #6d4c2f;color:#6d4c2f;transform:rotate(-3deg)}
+.t-geo .cat-head{background:linear-gradient(90deg,#0f766e,#14b8a6)}
+.t-geo{background-image:radial-gradient(#99f6e455 1.5px,transparent 1.5px);background-size:14px 14px;background-color:#f0fdfa}
+.t-geo article.q{background:#fff;border:2px dotted #14b8a6}
+.t-geo .q-num{background:#0f766e;color:#fff;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.t-geo ol.opts li{background:#f0fdfa;border:1px solid #99f6e4}
+.t-geo li.ok{background:#99f6e4}
+.t-geo .dif{background:#0f766e;color:#fff}
+.t-tech{background:#0d0d0d}
+.t-tech .cat-head{background:#161616;border-bottom:2px solid #4ade80}
+.t-tech .cat-head h2{font-family:'IBM Plex Mono',monospace;direction:ltr}
+.t-tech article.q{background:#161616;border:1px solid #333;color:#d4d4d4}
+.t-tech .q-top p{color:#e5e5e5}
+.t-tech .q-top p::before{content:'>_ ';color:#4ade80;font-family:'IBM Plex Mono',monospace}
+.t-tech .q-num{background:#4ade80;color:#000;font-family:'IBM Plex Mono',monospace}
+.t-tech ol.opts li{background:#0d0d0d;border:1px solid #333;color:#a3a3a3}
+.t-tech li.ok{border-color:#4ade80;color:#4ade80}
+.t-tech .dif{background:#4ade80;color:#000;font-family:'IBM Plex Mono',monospace}
+.t-lang{background:#fdf8ee}
+.t-lang .cat-head{background:linear-gradient(90deg,#b45309,#d97706)}
+.t-lang .cat-head h2{font-family:'Aref Ruqaa',serif;font-size:1.5rem}
+.t-lang article.q{background:repeating-linear-gradient(#fff 0 28px,#f7ecd4 28px 29px);border:1px solid #e5cf9f}
+.t-lang .q-num{background:#b45309;color:#fff}
+.t-lang ol.opts li{background:#ffffffcc;border-inline-start:4px solid #d97706}
+.t-lang li.ok{background:#fef3c7;border-inline-start-color:#15803d}
+.t-lang .dif{background:#b45309;color:#fff}
+.t-puzzle{background:linear-gradient(180deg,#fae8ff,#fff)}
+.t-puzzle .cat-head{background:linear-gradient(90deg,#a21caf,#ec4899)}
+.t-puzzle article.q{background:#fff;border:2px solid #f0abfc;border-radius:20px;transform:rotate(-.3deg)}
+.t-puzzle article.q:nth-child(even){transform:rotate(.3deg)}
+.t-puzzle .q-num{background:linear-gradient(135deg,#a21caf,#ec4899);color:#fff}
+.t-puzzle ol.opts li{background:#fdf4ff;border:1px solid #f0abfc}
+.t-puzzle li.ok{background:#f5d0fe;border-color:#a21caf}
+.t-puzzle .dif{background:#a21caf;color:#fff}
+.t-art{background:#111}
+.t-art .cat-head{background:linear-gradient(90deg,#000,#7f1d1d 60%,#b45309);border-bottom:3px solid #d4af37}
+.t-art article.q{background:#1c1917;border:1px solid #d4af3766;color:#f5f5f4}
+.t-art .q-top p{color:#fff}
+.t-art .q-num{background:#d4af37;color:#000}
+.t-art ol.opts li{background:#292524;border:1px solid #44403c;color:#e7e5e4}
+.t-art li.ok{background:#422006;border-color:#d4af37;color:#fde68a}
+.t-art .dif{background:#d4af37;color:#000}
+.t-food{background:#fff7ed}
+.t-food .cat-head{background:linear-gradient(90deg,#c2410c,#fb923c)}
+.t-food article.q{background:#fff;border:3px solid #fed7aa;border-radius:24px}
+.t-food .q-num{background:#ea580c;color:#fff;border-radius:50%;width:32px;height:32px}
+.t-food ol.opts li{background:#fff7ed;border:1px solid #fdba74;border-radius:999px}
+.t-food li.ok{background:#ffedd5;border-color:#ea580c}
+.t-food .dif{background:#ea580c;color:#fff;border-radius:999px}
+.t-econ{background:linear-gradient(180deg,#0f1f3d,#1e3a5f)}
+.t-econ .cat-head{background:linear-gradient(90deg,#0f1f3d,#b45309)}
+.t-econ article.q{background:#ffffff08;border:1px solid #d4af3755;color:#f1f5f9}
+.t-econ .q-top p{color:#fff}
+.t-econ .q-num{background:radial-gradient(circle at 35% 30%,#fde68a,#b45309);color:#000;border-radius:50%}
+.t-econ ol.opts li{background:#ffffff10;border:1px solid #ffffff22;color:#e2e8f0}
+.t-econ li.ok{background:#d4af3733;border-color:#d4af37;color:#fde68a}
+.t-econ .dif{background:#d4af37;color:#000}
+footer{text-align:center;color:#888;font-size:.75rem;padding:20px}
+@media(max-width:600px){
+  .top h1{width:100%;font-size:1rem}
+  .top-in{flex-direction:column;align-items:stretch;gap:8px}
+  .top-in h1,.top-in input,#search{width:100%}
+  .top-in .btn{width:100%;text-align:center}
+  main{padding:10px 8px}
+  section.cat{margin-bottom:16px}
+  .q-list{padding:8px}
+  article.q{padding:8px 10px}
+  .q-top p{font-size:0.9rem}
+  ol.opts li{padding:7px 10px;font-size:0.85rem}
+  nav.pills a{padding:6px 10px;font-size:0.75rem}
+  footer{padding:12px}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <h1>📖 بنك الأسئلة <small>• تحدي الأبطال</small></h1>
+  <input id="search" placeholder="🔍 ابحث في كل الأسئلة…">
+  <button class="btn gold" id="tglAns">إظهار الإجابات</button>
+  <button class="btn" id="random">🎲 عشوائي</button>
+</div></header>
+<main>
+  <div id="stats"></div>
+  <nav class="pills" id="pills"></nav>
+  <div id="cats"></div>
+</main>
+<footer>بنك الأسئلة © 2026 • اضغط أي سؤال لكشف إجابته</footer>
+<script>
+(function(){
+  const LET=['أ','ب','ج','د'];
+  const catsEl=document.getElementById('cats'), pills=document.getElementById('pills');
+  let total=0;
+  CATS.forEach(c=>{
+    const arr=QBANK[c.id]||[]; total+=arr.length;
+    const a=document.createElement('a'); a.href='#cat-'+c.id; a.textContent=c.icon+' '+c.name;
+    a.style.background=c.g; pills.appendChild(a);
+    const s=document.createElement('section'); s.className='cat t-'+c.id; s.id='cat-'+c.id;
+    s.innerHTML=`<header class="cat-head"><span class="cat-icon">${c.icon}</span>
+      <div><h2>${c.name}</h2><div class="count">${arr.length} سؤال</div></div>
+      <button class="fold">طي ⬆</button></header><div class="q-list"></div>`;
+    const list=s.querySelector('.q-list');
+    s.querySelector('.fold').onclick=e=>{s.classList.toggle('closed');e.target.textContent=s.classList.contains('closed')?'فتح ⬇':'طي ⬆'};
+    arr.forEach((q,i)=>{
+      const el=document.createElement('article'); el.className='q';
+      el.dataset.text=(q.q+' '+q.o.join(' '));
+      el.innerHTML=`<div class="q-top"><span class="q-num">${i+1}</span><p>${q.q}</p><span class="dif">${q.d}</span></div>
+        <ol class="opts">${q.o.map((t,j)=>`<li data-l="${LET[j]}" class="${j===q.a?'ok':''}"><span>${t}</span><span class="tick">✔</span></li>`).join('')}</ol>
+        <div class="hint-line">اضغط السؤال لكشف الإجابة الصحيحة</div>`;
+      el.onclick=()=>el.classList.toggle('revealed');
+      list.appendChild(el);
+    });
+    catsEl.appendChild(s);
+  });
+  document.getElementById('stats').textContent=`${CATS.length} فئة • ${total} سؤال • الإجابة الصحيحة عليها ✔`;
+  const tgl=document.getElementById('tglAns');
+  tgl.onclick=()=>{document.body.classList.toggle('show-answers');tgl.textContent=document.body.classList.contains('show-answers')?'إخفاء الإجابات':'إظهار الإجابات'};
+  document.getElementById('random').onclick=()=>{
+    const all=[...document.querySelectorAll('article.q')].filter(e=>e.style.display!=='none');
+    if(!all.length)return; const el=all[Math.floor(Math.random()*all.length)];
+    el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('flash');
+    setTimeout(()=>el.classList.remove('flash'),1800);
+  };
+  document.getElementById('search').oninput=e=>{
+    const v=e.target.value.trim(); let shown=0;
+    document.querySelectorAll('section.cat').forEach(s=>{
+      let n=0;
+      s.querySelectorAll('article.q').forEach(q=>{
+        const ok=!v||q.dataset.text.includes(v); q.style.display=ok?'':'none'; if(ok){n++;shown++}
+      });
+      s.style.display=n?'':'none';
+      s.querySelector('.count').textContent=v?`${n} نتيجة`:`${s.querySelectorAll('article.q').length} سؤال`;
+    });
+    document.getElementById('stats').textContent=v?`نتائج البحث: ${shown} سؤال`:`${CATS.length} فئة • ${total} سؤال • الإجابة الصحيحة عليها ✔`;
+  };
+})();
+</script>
+</body>
+</html>
